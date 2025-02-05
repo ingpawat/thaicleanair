@@ -1,59 +1,74 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { TouchableOpacity, Platform, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { ThemeProvider, useTheme } from './context/theme';
 
-import { useColorScheme } from '@/components/useColorScheme';
-
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
-
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
-
-export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    ...FontAwesome.font,
-  });
-
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
-
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+function ThemeToggleButton() {
+  const { theme, toggleTheme, colors } = useTheme();
+  const iconName = theme === 'light' ? 'sunny' : theme === 'dark' ? 'moon' : 'contrast';
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+    <TouchableOpacity 
+      onPress={toggleTheme} 
+      style={[
+        styles.themeButton, 
+        { backgroundColor: colors.cardBlur }
+      ]}
+    >
+      <Ionicons 
+        name={iconName} 
+        size={24} 
+        color={colors.text} 
+      />
+    </TouchableOpacity>
+  );
+}
+
+function StackNavigator() {
+  const { currentTheme, colors } = useTheme();
+
+  return (
+    <Stack>
+      <Stack.Screen
+        name="index"
+        options={{
+          title: 'Air Quality',
+          headerStyle: {
+            backgroundColor: colors.background,
+          },
+          headerTintColor: colors.text,
+          headerTitleStyle: {
+            fontWeight: '600',
+            fontSize: 18,
+            color: colors.text,
+            fontFamily: Platform.select({
+              ios: 'system',
+              android: 'sans-serif-medium',
+              default: 'system-ui'
+            }),
+          },
+          headerRight: () => <ThemeToggleButton />,
+          headerShadowVisible: false,
+        }}
+      />
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <StackNavigator />
     </ThemeProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  themeButton: {
+    marginRight: 15,
+    padding: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
